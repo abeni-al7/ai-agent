@@ -85,24 +85,23 @@ Time shares are my estimates from running this workflow; no source publishes the
 ### Dependencies
 
 ```mermaid
-flowchart LR
-  S1[S1 Intake] --> S2[S2 Documents]
-  S2 --> S3[S3 Registry]
-  S2 --> S4[S4 Owners]
-  S2 --> S8[S8 Bank account]
-  S3 --> S5[S5 Screening]
-  S4 --> S5
-  S5 --> S6[S6 Risk tier]
-  S6 --> S9[S9 Decision]
-  S8 --> S9
-  S1 -. gaps .-> S7[S7 Info requests]
-  S2 -. gaps .-> S7
-  S7 -. new uploads .-> S1
-  S9 --> S10[S10 Monitoring]
-  S10 -. reopens .-> S2
-  S10 -. reopens .-> S5
-  S5 --> S11[S11 Investigations]
-  S10 --> S11
+flowchart TB
+  S1["S1 · Intake"] --> S2["S2 · Documents"]
+  S2 --> S3["S3 · Registry"] & S4["S4 · Owners"] & S8["S8 · Bank account"]
+  S3 & S4 --> S5["S5 · Screening"]
+  S5 --> S6["S6 · Risk tier"]
+  S6 & S8 --> S9["S9 · Decision"]
+  S9 --> S10["S10 · Monitoring"]
+  S5 & S10 --> S11["S11 · Investigations"]
+  S1 & S2 -. "gaps" .-> S7["S7 · Info requests"]
+  S7 -. "new uploads" .-> S1
+  S10 -. "reopens" .-> S2 & S5
+  classDef path fill:#e3efe9,stroke:#0f3d2e,stroke-width:1.5px,color:#0f3d2e
+  classDef loop fill:#fbf1dc,stroke:#9a6b12,color:#5c3f07
+  classDef later fill:#e6ecf5,stroke:#33507a,color:#1f3354
+  class S1,S2,S3,S4,S5,S6,S9 path
+  class S7 loop
+  class S8,S10,S11 later
 ```
 
 - The onboarding path S1 → S2 → S3/S4 → S5 → S6 → S9 is the critical path. Everything downstream depends on S2,

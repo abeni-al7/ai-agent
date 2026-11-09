@@ -57,27 +57,17 @@ These are the high-priority sub-functions from [Step 1 §5](01-research-and-brea
 ## 3. Architecture
 
 ```mermaid
-flowchart LR
-  subgraph Vercel [Vercel: React SPA]
-    Console[Analyst console]
-    Portal[Merchant portal]
+flowchart TB
+  Users([Analyst · Merchant]) --> FE["Vercel · React app<br/>analyst console + merchant portal"]
+  FE -- "REST / JSON" --> API
+  Cron["GitHub Actions cron<br/>06:00 daily"] -- "POST /jobs/daily" --> JOBS
+  subgraph Render ["Render · FastAPI"]
+    API[REST API] --> CMD[Command agent]
+    API --> WF[Review workflow]
+    JOBS[Daily routine] --> WF
   end
-  subgraph Render [Render: FastAPI in Docker]
-    API[REST API]
-    WF[Review workflow]
-    CMD[Command agent]
-    JOBS[Daily routine]
-  end
-  Cron[GitHub Actions cron] -- "POST /jobs/daily (secret)" --> JOBS
-  Console & Portal --> API
-  API --> WF & CMD
-  JOBS --> WF
-  WF & CMD & JOBS --> DB[(Neon Postgres)]
-  WF & CMD --> Gemini[Gemini API]
-  WF --> Lists[OFAC + UN lists]
-  WF --> Reg[GLEIF + Companies House]
-  WF & JOBS --> Gmail[Gmail API]
-  WF & JOBS --> Cal[Google Calendar API]
+  Render --> DB[(Neon Postgres)]
+  Render --> EXT["Free external APIs<br/>Gemini · Gmail · Google Calendar<br/>OFAC + UN lists · GLEIF · Companies House"]
 ```
 
 | Layer | Choice | Why |
@@ -137,31 +127,27 @@ merchants in Ethiopia apply mostly from phones.
 
 ### Onboarding (event-driven)
 
+Amber steps are the merchant, green steps are Wekil, and blue is the human analyst.
+
 ```mermaid
-sequenceDiagram
-  participant M as Merchant
-  participant P as Portal
-  participant W as Wekil workflow
-  participant G as Gemini
-  participant X as Lists / registries
-  participant A as Analyst
-  M->>P: apply + upload documents
-  P->>W: application submitted
-  W->>W: S1 completeness vs matrix
-  W->>G: S2 extract fields (schema per document)
-  W->>W: cross-document consistency checks
-  W->>X: S3 registry lookup, S5 fuzzy screening
-  W->>G: triage each candidate hit
-  W->>W: S6 risk score → tier
-  alt gaps or mismatches
-    W->>M: Gmail info request + upload link, Calendar due date
-    M->>P: uploads → workflow re-runs
-  else complete
-    W->>G: S9 draft decision memo
-    W->>A: ready for decision
-    A->>W: approve / reject
-    W->>M: Gmail outcome + periodic review on Calendar
-  end
+flowchart TB
+  A1["Merchant applies on the portal<br/>and uploads documents"] --> B1["S1 · Completeness check<br/>against the document matrix"]
+  B1 --> B2["S2 · Gemini extracts fields<br/>+ cross-document consistency"]
+  B2 --> B3["S3 · Registry lookup<br/>S5 · Sanctions screening + Gemini triage"]
+  B3 --> B4["S6 · Risk score → tier"]
+  B4 --> D{"Gaps or<br/>mismatches?"}
+  D -- yes --> C1["S7 · Gmail info request + upload link<br/>due date on Google Calendar"]
+  C1 --> A2["Merchant uploads<br/>the missing items"]
+  A2 --> B1
+  D -- no --> B5["S9 · Gemini drafts the decision memo"]
+  B5 --> H1["Analyst approves or rejects"]
+  H1 --> C2["Gmail outcome to the merchant<br/>periodic review on Google Calendar"]
+  classDef merchant fill:#fbf1dc,stroke:#9a6b12,color:#5c3f07
+  classDef agent fill:#e3efe9,stroke:#0f3d2e,color:#0f3d2e
+  classDef human fill:#e6ecf5,stroke:#33507a,color:#1f3354
+  class A1,A2 merchant
+  class B1,B2,B3,B4,B5,C1,C2,D agent
+  class H1 human
 ```
 
 ### Every morning (proactive)
