@@ -154,13 +154,13 @@ sequenceDiagram
   W->>G: triage each candidate hit
   W->>W: S6 risk score → tier
   alt gaps or mismatches
-    W->>M: Gmail: info request + upload link (Calendar due date)
+    W->>M: Gmail info request + upload link, Calendar due date
     M->>P: uploads → workflow re-runs
   else complete
     W->>G: S9 draft decision memo
     W->>A: ready for decision
     A->>W: approve / reject
-    W->>M: Gmail: outcome; schedule periodic review (Calendar)
+    W->>M: Gmail outcome + periodic review on Calendar
   end
 ```
 
