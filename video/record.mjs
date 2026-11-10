@@ -106,8 +106,9 @@ const SCENES = {
     await go(APP);
     await page.waitForSelector(".decisions, .empty");
     await h.hover(".page-head h1", 1600);
-    await h.hover(".decision >> nth=0", 1500);
-    await h.hover(".decision >> nth=1", 1200);
+    await h.hover(".decision >> nth=0", 1500).catch(() => {});
+    await h.hover(".rows", 1500).catch(() => {});
+    await h.hover(".log", 1500).catch(() => {});
     await h.drift(t - 7000);
   },
   async S02() {
