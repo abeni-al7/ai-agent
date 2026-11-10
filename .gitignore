@@ -5,3 +5,5 @@ __pycache__/
 node_modules/
 dist/
 .playwright-mcp/
+video/out/
+video/node_modules/
