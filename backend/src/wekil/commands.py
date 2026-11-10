@@ -131,7 +131,9 @@ def run(db: Session, text: str) -> dict:
             steps.append({"tool": fc.name, "args": args})
             parts.append(types.Part.from_function_response(name=fc.name, response=result))
         contents.append(types.Content(role="user", parts=parts))
-    return {"answer": "I could not finish that request.", "proposals": proposals, "steps": steps}
+    config.tool_config = types.ToolConfig(function_calling_config=types.FunctionCallingConfig(mode="NONE"))
+    final = gemini.call([*contents, "Answer the analyst now with what you found."], config)
+    return {"answer": final.text, "proposals": proposals, "steps": steps}
 
 
 def confirm(db: Session, proposals: list[dict]) -> list[str]:

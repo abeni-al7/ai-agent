@@ -13,7 +13,7 @@ from sqlalchemy import delete
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from merchants import MERCHANTS  # noqa: E402
 
-from wekil.db import Case, Document, Event, Hit, InfoRequest, ListEntry, Merchant, SessionLocal, log  # noqa: E402
+from wekil.db import Case, Document, Event, Hit, InfoRequest, ListEntry, Merchant, SessionLocal, log, now  # noqa: E402
 from wekil.workflow import review  # noqa: E402
 
 DOCS = pathlib.Path(__file__).parent / "documents"
@@ -67,11 +67,11 @@ def reset() -> None:
             db.add(m)
             db.flush()
             log(db, "decided", m.id, actor="analyst", outcome="approved", note="Onboarded before the demo")
-        m = merchant("merkato", status="awaiting_merchant")
+        m = merchant("merkato", status="awaiting_merchant", created_at=now() - timedelta(days=9))
         m.documents = files("merkato", extracted=True)
         db.add(m)
         db.flush()
-        db.add(InfoRequest(merchant_id=m.id, due_on=TODAY - timedelta(days=2),
+        db.add(InfoRequest(merchant_id=m.id, due_on=TODAY - timedelta(days=2), created_at=now() - timedelta(days=7),
                            items=[{"doc_type": None, "text": "Upload a bank letter confirming the payout account is "
                                                              "in the business owner's name."}]))
         log(db, "info_requested", m.id, items=["Bank letter for the payout account"],
