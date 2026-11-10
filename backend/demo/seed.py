@@ -58,7 +58,9 @@ def reset() -> None:
 
         # Existing book: two approved merchants, one waiting on an overdue request.
         for slug, tier, months_ago in (("lalibela", "low", 11), ("hawassa", "medium", 5)):
-            m = merchant(slug, status="approved", risk_tier=tier, risk_score=10 if tier == "low" else 40,
+            m = merchant(slug, status="approved", risk_tier=tier,
+                         created_at=now() - timedelta(days=30 * months_ago + 6),
+                         decided_at=now() - timedelta(days=30 * months_ago), risk_score=10 if tier == "low" else 40,
                          risk_factors=["+0 Seeded: approved before the demo"],
                          next_review=TODAY + timedelta(days=30 * (24 if tier == "low" else 12) - 30 * months_ago),
                          registry_check={"source": "Ethiopian business register (simulated)", "status": "match"},
