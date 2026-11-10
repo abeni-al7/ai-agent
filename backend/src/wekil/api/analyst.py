@@ -1,9 +1,13 @@
 """Analyst console API (bearer-token auth)."""
 
+import io
 from datetime import date, timedelta
+from functools import lru_cache
 
 import jwt
+import pypdfium2 as pdfium
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Response
+from PIL import Image
 from pydantic import BaseModel
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
@@ -77,6 +81,26 @@ def merchant(mid: int, db: Session = Depends(get_db)):
         "cases": [{"id": c.id, "kind": c.kind, "detail": c.detail, "due_on": c.due_on, "status": c.status}
                   for c in m.cases],
         "events": [{"actor": e.actor, "action": e.action, "detail": e.detail, "at": e.at} for e in events]}
+
+
+@secured.get("/documents/{did}/preview")
+def document_preview(did: int, db: Session = Depends(get_db)):
+    d = db.get(Document, did) or _404()
+    return Response(preview(d.id, d.mime, d.data), media_type="image/webp",
+                    headers={"Cache-Control": "private, max-age=86400"})
+
+
+@lru_cache(maxsize=256)
+def preview(did: int, mime: str, data: bytes) -> bytes:
+    """First page as a small WebP, so the analyst sees the document beside its fields on any browser."""
+    if mime == "application/pdf":
+        img = pdfium.PdfDocument(data)[0].render(scale=1.4).to_pil()
+    else:
+        img = Image.open(io.BytesIO(data))
+    img.thumbnail((900, 1270))
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, "WEBP", quality=82)
+    return buf.getvalue()
 
 
 @secured.get("/documents/{did}/file")

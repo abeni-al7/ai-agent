@@ -1,0 +1,18 @@
+name: Wekil morning routine
+# Cloud Scheduler needs a billing account; this free cron triggers the same endpoint every morning.
+on:
+  schedule:
+    - cron: "0 3 * * *"   # 06:00 Africa/Addis_Ababa
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake the API and start the routine
+        env:
+          API_URL: ${{ secrets.WEKIL_API_URL }}
+          CRON_SECRET: ${{ secrets.WEKIL_CRON_SECRET }}
+        run: |
+          for i in 1 2 3 4 5 6; do curl -sf "$API_URL/api/health" && break || sleep 20; done
+          curl -sf -X POST -H "X-Cron-Secret: $CRON_SECRET" "$API_URL/api/jobs/daily"
