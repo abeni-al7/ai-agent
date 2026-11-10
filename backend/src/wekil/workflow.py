@@ -68,13 +68,22 @@ def _review(db: Session, m: Merchant) -> None:
     log(db, "risk_scored", m.id, tier=m.risk_tier, score=m.risk_score)
 
     asks = [{"doc_type": t, "text": f"Upload your {documents.DOC_TYPES[t]}."} for t in missing]
-    asks += [{"doc_type": i["doc_type"], "text": i["text"]} for i in issues if i["ask"] and i["severity"] == "blocker"]
+    asks += [{"doc_type": i["doc_type"], "text": ask_text(i)}
+             for i in issues if i["ask"] and i["severity"] == "blocker"]
     if asks:  # S7
         request_info(db, m, asks)
         return
     m.memo = risk.memo(m, fields, m.registry_check, m.hits, issues)  # S9
     m.status = "ready"
     log(db, "memo_drafted", m.id, recommendation=m.memo.split("\n")[0][:200])
+
+
+def ask_text(issue: dict) -> str:
+    """Turn a finding into an instruction the merchant can act on."""
+    doc = documents.DOC_TYPES.get(issue["doc_type"], "document")
+    if "expired" in issue["text"]:
+        return f"Upload a renewed {doc}; the one we received expired {issue['text'].split('expired ', 1)[1]}"
+    return f"{issue['text']} Upload a corrected {doc}, or reply to this email to explain."
 
 
 def _screen(db: Session, m: Merchant) -> None:
